@@ -626,20 +626,20 @@ static void main_loop() {
 
 	ImGui::SetNextWindowSize(ImVec2(450, h));
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::Begin("Toost, by TheGreatRambler", nullptr,
+	ImGui::Begin("Toost by TheGreatRambler", nullptr,
 		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
-	ImGui::Checkbox("Remove Grid", &remove_grid);
-	ImGui::Checkbox("Render Objects Over Pipes", &render_objects_over_pipes);
-	ImGui::Text("Image Scale");
+	ImGui::Checkbox("격자 제거하기", &remove_grid);
+	ImGui::Checkbox("토관 아래 오브젝트 렌더링하기", &render_objects_over_pipes);
+	ImGui::Text("이미지 크기");
 	ImGui::DragFloat("##1", &image_scale, 0.125f, 0.125f, 8.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
 
 	std::string choice;
-	if(ImGui::Button("Load Level")) {
+	if(ImGui::Button("레벨 로드")) {
 #ifdef __EMSCRIPTEN__
 		ReadFileFromUserJS();
 #else
-		auto selection = pfd::open_file("Choose level to open", ".", { "All Files", "*" }, pfd::opt::none).result();
+		auto selection = pfd::open_file("로드할 레벨 선택", ".", { "모든 파일", "*" }, pfd::opt::none).result();
 		if(!selection.empty()) {
 			puts("File chosen");
 			choice = selection[0];
@@ -666,9 +666,9 @@ static void main_loop() {
 	}
 
 	static char input_string[12] = { 0 };
-	ImGui::Text("Download By Level ID");
+	ImGui::Text("레벨 ID로 다운로드");
 	ImGui::InputText("##2", input_string, sizeof(input_string));
-	if(ImGui::Button("Download Level")) {
+	if(ImGui::Button("레벨 다운로드")) {
 		std::string download_id                 = std::string(input_string);
 		static std::unordered_set<char> charset = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'B', 'C', 'D',
 			'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y' };
@@ -696,7 +696,7 @@ static void main_loop() {
 			download_level_mutex.unlock();
 #endif
 		} else {
-			popup_text           = fmt::format("Level ID {} is not of the right format", download_id);
+			popup_text           = fmt::format("레벨 ID \“{} \”가 올바른 포맷이 아닙니다", download_id);
 			remaining_popup_time = 180;
 		}
 	}
@@ -706,7 +706,7 @@ static void main_loop() {
 		download_level_mutex.lock();
 #endif
 		if(download_level_flag == 2) {
-			popup_text           = fmt::format("Level ID {} could not be downloaded", download_level_destination);
+			popup_text           = fmt::format("레벨을 {}에 저장하지 못했습니다", download_level_destination);
 			remaining_popup_time = 180;
 		} else {
 			fmt::print("Level was downloaded to {}\n", download_level_destination);
@@ -737,7 +737,7 @@ static void main_loop() {
 
 	bool close_current_level = false;
 	if(focused_window_index != -1) {
-		if(ImGui::Button("Download Image")) {
+		if(ImGui::Button("이미지 다운로드")) {
 			LevelWindow selected_level_info = opened_level_windows[focused_window_index];
 #ifdef __EMSCRIPTEN__
 			EM_ASM(
@@ -754,7 +754,7 @@ static void main_loop() {
 				selected_level_info.name.c_str(), selected_level_info.name.size());
 #else
 			auto selection = pfd::save_file(
-				"Choose image destination", selected_level_info.name, { "PNG Image", ".png" }, pfd::opt::none)
+				"이미지 경로 선택", selected_level_info.name, { "PNG 이미지", ".png" }, pfd::opt::none)
 								 .result();
 			if(!selection.empty()) {
 				puts("Location chosen");
@@ -768,7 +768,7 @@ static void main_loop() {
 #endif
 		}
 
-		if(ImGui::Button("Download JSON")) {
+		if(ImGui::Button("JSON 다운로드")) {
 			LevelWindow selected_level_info = opened_level_windows[focused_window_index];
 #ifdef __EMSCRIPTEN__
 			std::string dest = fmt::format("{}/{}.json", assetsFolder, selected_level_info.name);
@@ -787,7 +787,7 @@ static void main_loop() {
 				dest.c_str(), dest.size(), name.c_str(), name.size());
 #else
 			auto selection = pfd::save_file(
-				"Choose JSON destination", selected_level_info.name + ".json", { "JSON text", ".json" }, pfd::opt::none)
+				"JSON 경로 선택", selected_level_info.name + ".json", { "JSON 텍스트", ".json" }, pfd::opt::none)
 								 .result();
 			if(!selection.empty()) {
 				puts("Location chosen");
@@ -799,7 +799,7 @@ static void main_loop() {
 #endif
 		}
 
-		close_current_level = ImGui::Button("Close Level");
+		close_current_level = ImGui::Button("레벨 닫기");
 
 		if(focused_window_index != cached_focused_window_index) {
 			auto& cwfi = cached_focused_window_info;
@@ -810,56 +810,56 @@ static void main_loop() {
 			fmt::print("Caching level data for {}\n", opened_level_windows[focused_window_index].name);
 			LevelParser& level = *opened_level_windows[focused_window_index].parser;
 			cwfi.reserve(50);
-			cwfi.push_back(std::string("Name: ") + level.LH.Name);
-			cwfi.push_back(std::string("Description: ") + level.LH.Desc);
-			cwfi.push_back(std::string("Gamestyle: ") + levelMappings->NumToGameStyle.at(level.LH.GameStyle));
-			cwfi.push_back(std::string("Theme: ") + levelMappings->NumToTheme.at(level.MapHdr.Theme));
-			cwfi.push_back(std::string("Is Overworld: ") + (level.isOverworld ? "yes" : "no"));
-			cwfi.push_back(std::string("Is Night Time: ") + (level.MapHdr.Flag == 1 ? "yes" : "no"));
-			cwfi.push_back(std::string("Clear Time: ") + levelMappings->FormatMillisecondTime(level.LH.ClearTime));
-			cwfi.push_back(std::string("Clear Attempts: ") + std::to_string(level.LH.ClearAttempts));
-			cwfi.push_back(std::string("Game Version: ") + levelMappings->NumToGameVersion.at(level.LH.ClearVer));
-			// cwfi.push_back(fmt::format("Uploaded: {:02}-{:02}-{} {}:{:02}", level.LH.DateDD, level.LH.DateMM,
+			cwfi.push_back(std::string("이름: ") + level.LH.Name);
+			cwfi.push_back(std::string("설명: ") + level.LH.Desc);
+			cwfi.push_back(std::string("게임 스킨: ") + levelMappings->NumToGameStyle.at(level.LH.GameStyle));
+			cwfi.push_back(std::string("게임 배경: ") + levelMappings->NumToTheme.at(level.MapHdr.Theme));
+			cwfi.push_back(std::string("오버월드: ") + (level.isOverworld ? "O" : "X"));
+			cwfi.push_back(std::string("밤: ") + (level.MapHdr.Flag == 1 ? "O" : "X"));
+			cwfi.push_back(std::string("클리어 시간: ") + levelMappings->FormatMillisecondTime(level.LH.ClearTime));
+			cwfi.push_back(std::string("클리어 도전수: ") + std::to_string(level.LH.ClearAttempts));
+			cwfi.push_back(std::string("게임 버전: ") + levelMappings->NumToGameVersion.at(level.LH.ClearVer));
+			// cwfi.push_back(fmt::format("업로드 일시: {:02}-{:02}-{} {}:{:02}", level.LH.DateDD, level.LH.DateMM,
 			// 	level.LH.DateYY, level.LH.DateH, level.LH.DateM));
-			cwfi.push_back(std::string("Timer: ") + std::to_string(level.LH.Timer));
-			cwfi.push_back(std::string("Start Y: ") + std::to_string(level.LH.StartY));
-			cwfi.push_back(fmt::format("Goal X: {}", level.LH.GoalX / 10.0));
-			cwfi.push_back(std::string("Goal Y: ") + std::to_string(level.LH.GoalY));
+			cwfi.push_back(std::string("제한 시간: ") + std::to_string(level.LH.Timer));
+			cwfi.push_back(std::string("시작 Y: ") + std::to_string(level.LH.StartY));
+			cwfi.push_back(fmt::format("도착 X: {}", level.LH.GoalX / 10.0));
+			cwfi.push_back(std::string("도착 Y: ") + std::to_string(level.LH.GoalY));
 			std::string clear_condition
 				= fmt::format(levelMappings->NumToClearCondition.at(level.LH.ClearCRC), level.LH.ClearCA);
-			cwfi.push_back(std::string("Clear Condition: ") + clear_condition);
-			cwfi.push_back(std::string("Clear Condition Category: ")
+			cwfi.push_back(std::string("클리어 조건: ") + clear_condition);
+			cwfi.push_back(std::string("클리어 조건 카테고리: ")
 						   + levelMappings->NumToClearConditionCategory.at(level.LH.ClearCC));
 			cwfi.push_back(
-				std::string("Autoscroll Speed: ") + levelMappings->NumToAutoscrollSpeed.at(level.LH.AutoscrollSpd));
+				std::string("오토스크롤 속도: ") + levelMappings->NumToAutoscrollSpeed.at(level.LH.AutoscrollSpd));
 			cwfi.push_back(
-				std::string("Autoscroll Type: ") + levelMappings->NumToAutoscrollType.at(level.MapHdr.AutoscrollType));
-			cwfi.push_back(std::string("Orientation: ") + levelMappings->NumToOrientation.at(level.MapHdr.Ori));
-			cwfi.push_back(std::string("Liquid Start Height: ") + std::to_string(level.MapHdr.LiqSHeight));
-			cwfi.push_back(std::string("Liquid End Height: ") + std::to_string(level.MapHdr.LiqEHeight));
-			cwfi.push_back(std::string("Liquid Mode: ") + levelMappings->NumToLiquidMode.at(level.MapHdr.LiqMode));
-			cwfi.push_back(std::string("Liquid Speed: ") + levelMappings->NumToLiquidSpeed.at(level.MapHdr.LiqSpd));
-			cwfi.push_back(std::string("Boundary Type: ") + levelMappings->NumToBoundaryType.at(level.MapHdr.BorFlag));
-			cwfi.push_back(std::string("Right Boundary: ") + std::to_string(level.MapHdr.BorR));
-			cwfi.push_back(std::string("Top Boundary: ") + std::to_string(level.MapHdr.BorT));
-			cwfi.push_back(std::string("Left Boundary: ") + std::to_string(level.MapHdr.BorL));
-			cwfi.push_back(std::string("Bottom Boundary: ") + std::to_string(level.MapHdr.BorB));
-			cwfi.push_back(std::string("Object Count: ") + std::to_string(level.MapHdr.ObjCount));
-			cwfi.push_back(std::string("Sound Effect Count: ") + std::to_string(level.MapHdr.SndCount));
-			cwfi.push_back(std::string("Snake Block Count: ") + std::to_string(level.MapHdr.SnakeCount));
-			cwfi.push_back(std::string("Clear Pipe Count: ") + std::to_string(level.MapHdr.ClearPipCount));
-			cwfi.push_back(std::string("Piranha Creeper Count: ") + std::to_string(level.MapHdr.CreeperCount));
-			cwfi.push_back(std::string("! Block Count: ") + std::to_string(level.MapHdr.iBlkCount));
-			cwfi.push_back(std::string("Track Count: ") + std::to_string(level.MapHdr.TrackCount));
-			cwfi.push_back(std::string("Track Block Count: ") + std::to_string(level.MapHdr.TrackBlkCount));
-			cwfi.push_back(std::string("Ground Count: ") + std::to_string(level.MapHdr.GroundCount));
-			cwfi.push_back(std::string("Icicle Count: ") + std::to_string(level.MapHdr.IceCount));
-			cwfi.push_back(std::string("UploadID (Unknown): ") + std::to_string(level.LH.UploadID));
-			cwfi.push_back(std::string("CreationID (Unknown): ") + std::to_string(level.LH.CreationID));
-			cwfi.push_back(std::string("GameVer (Unknown): ") + std::to_string(level.LH.GameVer));
-			cwfi.push_back(std::string("Management Flags (Unknown): ") + std::to_string(level.LH.MFlag));
+				std::string("오토스크롤 종류: ") + levelMappings->NumToAutoscrollType.at(level.MapHdr.AutoscrollType));
+			cwfi.push_back(std::string("화면 방향: ") + levelMappings->NumToOrientation.at(level.MapHdr.Ori));
+			cwfi.push_back(std::string("액체 시작 높이: ") + std::to_string(level.MapHdr.LiqSHeight));
+			cwfi.push_back(std::string("액체 종료 높이: ") + std::to_string(level.MapHdr.LiqEHeight));
+			cwfi.push_back(std::string("액체 모드: ") + levelMappings->NumToLiquidMode.at(level.MapHdr.LiqMode));
+			cwfi.push_back(std::string("액체 속도: ") + levelMappings->NumToLiquidSpeed.at(level.MapHdr.LiqSpd));
+			cwfi.push_back(std::string("경계 타입: ") + levelMappings->NumToBoundaryType.at(level.MapHdr.BorFlag));
+			cwfi.push_back(std::string("우단 경계: ") + std::to_string(level.MapHdr.BorR));
+			cwfi.push_back(std::string("상단 경계: ") + std::to_string(level.MapHdr.BorT));
+			cwfi.push_back(std::string("좌단 경계: ") + std::to_string(level.MapHdr.BorL));
+			cwfi.push_back(std::string("하단 경계: ") + std::to_string(level.MapHdr.BorB));
+			cwfi.push_back(std::string("오브젝트 카운트: ") + std::to_string(level.MapHdr.ObjCount));
+			cwfi.push_back(std::string("사운드 이펙트 카운트: ") + std::to_string(level.MapHdr.SndCount));
+			cwfi.push_back(std::string("스네이크블록 카운트: ") + std::to_string(level.MapHdr.SnakeCount));
+			cwfi.push_back(std::string("투명토관 카운트: ") + std::to_string(level.MapHdr.ClearPipCount));
+			cwfi.push_back(std::string("쭉쭉뻐끔 카운트: ") + std::to_string(level.MapHdr.CreeperCount));
+			cwfi.push_back(std::string("!블록 카운트: ") + std::to_string(level.MapHdr.iBlkCount));
+			cwfi.push_back(std::string("레일 카운트: ") + std::to_string(level.MapHdr.TrackCount));
+			cwfi.push_back(std::string("대쉬블록 카운트: ") + std::to_string(level.MapHdr.TrackBlkCount));
+			cwfi.push_back(std::string("땅 카운트: ") + std::to_string(level.MapHdr.GroundCount));
+			cwfi.push_back(std::string("고드름 카운트: ") + std::to_string(level.MapHdr.IceCount));
+			cwfi.push_back(std::string("업로드 ID (알 수 없음): ") + std::to_string(level.LH.UploadID));
+			cwfi.push_back(std::string("생성 ID (알 수 없음): ") + std::to_string(level.LH.CreationID));
+			cwfi.push_back(std::string("게임 버전 (알 수 없음): ") + std::to_string(level.LH.GameVer));
+			cwfi.push_back(std::string("관리 플래그 (알 수 없음): ") + std::to_string(level.LH.MFlag));
 			cwfi.push_back("");
-			cwfi.push_back("Level Objects:");
+			cwfi.push_back("레벨 오브젝트:");
 			for(auto& object : level.MapObj) {
 				cwfi.push_back(std::string("- ") + std::string(ObjEng[object.ID]));
 				cwfi.push_back(fmt::format("    x: {}", object.X / 10.0));
@@ -956,21 +956,21 @@ EMSCRIPTEN_KEEPALIVE bool mobile_emscripten_render(char* id) {
 #endif
 
 int main(int argc, char** argv) {
-	cxxopts::Options options("TOOST", "A Super Mario Maker 2 level viewer, based on JiXiaomai's SMM2LevelViewer");
+	cxxopts::Options options("TOOST", "JiXiaomai의 SMM2LevelViewer를 기반으로 한 슈퍼 마리오 메이커 2 레벨 뷰어");
 
 	// clang-format off
 	options.add_options()
-		("p,path", "Path to level to view", cxxopts::value<std::string>())
-		("c,code", "Level code to view", cxxopts::value<std::string>())
-		("o,overworld", "Where to put rendered overworld image", cxxopts::value<std::string>())
-		("s,subworld", "Where to put rendered subworld image", cxxopts::value<std::string>())
-		("overworldJson", "Where to put overworld JSON", cxxopts::value<std::string>())
-		("subworldJson", "Where to put subworld JSON", cxxopts::value<std::string>())
-		("a,scale", "Render level at this scale", cxxopts::value<float>())
-		("r,removeGrid", "Remove grid from render")
-		("e,objectsOverPipes", "Render objects over pipes rather than under them")
-		("d,debug", "Enable debug logging")
-		("h,help", "Print help menu");
+		("p,path", "로드할 레벨 경로", cxxopts::value<std::string>())
+		("c,code", "로드할 레벨 코드", cxxopts::value<std::string>())
+		("o,overworld", "렌더한 오버월드 이미지 저장 경로", cxxopts::value<std::string>())
+		("s,subworld", "렌더한 서브월드 이미지 저장 경로", cxxopts::value<std::string>())
+		("overworldJson", "오버월드 JSON 저장 경로", cxxopts::value<std::string>())
+		("subworldJson", "서브월드 JSON 저장 경로", cxxopts::value<std::string>())
+		("a,scale", "레벨의 렌더링 스케일", cxxopts::value<float>())
+		("r,removeGrid", "렌더에서 격자 제거하기")
+		("e,objectsOverPipes", "토관 아래 오브젝트를 위로 렌더링하기")
+		("d,debug", "디버그 로깅 활성화")
+		("h,help", "도움 메뉴 출력");
 	// clang-format on
 	options.allow_unrecognised_options();
 
@@ -1010,17 +1010,17 @@ int main(int argc, char** argv) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(20));
 #endif
 				if(download_level_flag == 2) {
-					fmt::print("Level ID {} could not be downloaded\n", download_level_destination);
+					fmt::print("레벨 ID {} 다운로드 불가\n", download_level_destination);
 					return 1;
 				} else {
-					fmt::print("Level was downloaded to {}\n", download_level_destination);
+					fmt::print("레벨이 {}에 다운로드됨\n", download_level_destination);
 					path = download_level_destination;
 					break;
 				}
 			}
 
 			if(path.empty()) {
-				puts("Downloading took too long");
+				puts("다운로드에 시간이 너무 오래 걸림");
 				return 1;
 			}
 		}
@@ -1074,7 +1074,7 @@ int main(int argc, char** argv) {
 
 			return 0;
 		} else {
-			fmt::print("Path {} does not exist\n", path);
+			fmt::print("{} 경로가 존재하지 않음\n", path);
 			return 1;
 		}
 	}
