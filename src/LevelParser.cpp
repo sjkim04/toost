@@ -750,22 +750,22 @@ void LevelParser::ExportToJSON(const std::string& outputPath, std::vector<Drawin
 	destination_file.close();
 }
 
-const char* ObjEng[] = { "Goomba", "Koopa", "Piranha Flower", "Hammer Bro", "Block", "? Block", "Stone", "Hard Block",
-	"Coin", "Pipe", "Spring", "Lift", "Thwomp", "Bullet Bill Blaster", "Mushroom Platform", "Bob-omb",
-	"Semisolid Platform", "Bridge", "P Switch", "POW", "Super Mushroom", "Donut Block", "Cloud", "Note Block",
-	"Fire Bar", "Spiny", "Hard Block", "Goal", "Buzzy Beetle", "Hidden Block", "Lakitu", "Lakitu Cloud", "Banzai Bill",
-	"1UP", "Fire Flower", "Super Star", "Lava Lift", "Starting Brick", "Starting Arrow", "Magikoopa", "Spike Top",
-	"Boo", "Clown Car", "Spikes", "Big Mushroom", "Shoe Goomba", "Dry Bones", "Cannon", "Blooper", "Castle Bridge",
-	"Jumping Machine", "Skipsqueak", "Wiggler", "Conveyor Belt", "Burner", "Door", "Cheep Cheep", "Muncher",
-	"Rocky Wrench", "Track", "Lava Bubble", "Chain Chomp", "Bowser", "Ice Block", "Vine", "Stingby", "Arrow", "One-Way",
-	"Saw", "Player", "Big Coin", "Half Collision Platform", "Koopa Car", "Cinobio (not yet named)", "Spike/Ball",
-	"Stone", "Twister", "Boom Boom", "Pokey", "P Block", "Sprint Platform", "SMB2 Mushroom", "Donut", "Skewer",
-	"Snake Block", "Spike Block", "Charvaargh", "Slight Slope", "Steep Slope", "Reel Camera", "Checkpoint Flag",
-	"Seesaw", "Red Coin", "Clear Pipe", "Conveyor Belt", "Key", "Ant Trooper", "Warp Box", "Bowser Jr", "ON/OFF Block",
-	"Dotted-Line Block", "Water Marker", "Monty Mole", "Fish Bone", "Angry Sun", "Swinging Claw", "Tree",
-	"Piranha Creeper", "Blinking Block", "Sound Effect", "Spike Block", "Mechakoopa", "Crate", "Mushroom Trampoline",
-	"Porkupuffer", "Cinobic", "Super Hammer", "Bully", "Icicle", "! Block", "Lemmy", "Morton", "Larry", "Wendy", "Iggy",
-	"Roy", "Ludwig", "Cannon Box", "Propeller Box", "Goomba Mask", "Bullet Bill Mask", "Red POW Box",
-	"ON/OFF Trampoline" };
+const char* ObjEng[] = { "굼바", "엉금엉금", "뻐끔플라워", "해머브러스", "블록", "?블록", "돌", "딱딱블록",
+	"코인", "토관", "점프대", "리프트", "쿵쿵", "킬러대포", "버섯 지형", "폭탄병",
+	"반벽 지형", "다리", "P스위치", "POW블록", "슈퍼버섯", "도넛블록", "구름블록", "음표블록",
+	"파이어바", "가시돌이", "딱딱블록", "골", "하잉바", "투명블록", "김수한무", "김수한무 구름", "매그넘킬러",
+	"1UP버섯", "파이어플라워", "슈퍼스타", "용암리프트", "시작 벽돌", "시작 화살표", "마귀", "가시하잉바",
+	"부끄부끄", "쿠파피에로", "가봉", "점보버섯", "신발굼바", "와르르", "발사대", "Blooper", "Castle Bridge",
+	"Jumping Machine", "폴찍폴찍", "Wiggler", "벨트컨베이어", "버너", "문", "Cheep Cheep", "블랙뻐끔",
+	"뚜", "Track", "Lava Bubble", "Chain Chomp", "쿠파", "Ice Block", "덩굴", "Stingby", "Arrow", "일방통행",
+	"Saw", "플레이어", "10+코인", "Half Collision Platform", "Koopa Car", "키노피오", "Spike/Ball",
+	"돌", "Twister", "붕붕", "Pokey", "P블록", "대시블록", "마리오 2의 버섯", "Donut", "Skewer",
+	"스네이크블록", "가시블록", "Charvaargh", "완만한 비탈길", "가파른 비탈길", "Reel Camera", "Checkpoint Flag",
+	"시소", "핑크코인", "투명토관", "벨트컨베이어", "열쇠", "Ant Trooper", "워프박스", "쿠파주니어", "ON/OFF스위치",
+	"점선블록", "Water Marker", "Monty Mole", "Fish Bone", "Angry Sun", "그네크레인", "나무",
+	"쭉쭉뻐끔", "깜빡블록", "사운드 이펙트", "가시블록", "메카쿠파", "Crate", "버섯트램펄린",
+	"Porkupuffer", "Cinobic", "Super Hammer", "Bully", "고드름", "!블록", "레미", "모톤", "래리", "웬디", "이기",
+	"로이", "루드윅", "Cannon Box", "Propeller Box", "Goomba Mask", "Bullet Bill Mask", "Red POW Box",
+	"스위치버섯트램펄린" };
 
 LevelParserMappings* levelMappings = new LevelParserMappings();
