@@ -566,7 +566,7 @@ static void main_loop() {
 
 	ImGui::SetNextWindowSize(ImVec2(450, h));
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	ImGui::Begin("Toost, by TheGreatRambler", nullptr,
+	ImGui::Begin("Toost by TheGreatRambler", nullptr,
 		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
 	ImGui::Checkbox("Remove Grid", &remove_grid);
