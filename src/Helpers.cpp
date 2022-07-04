@@ -5,6 +5,14 @@ std::filesystem::path Helpers::GetExecutableDirectory() {
 	wchar_t path[MAX_PATH] = { 0 };
 	GetModuleFileNameW(NULL, path, MAX_PATH);
 	return path;
+#elif defined(__APPLE__)
+	char buf [PATH_MAX];
+	uint32_t bufsize = PATH_MAX;
+	if(_NSGetExecutablePath(buf, &bufsize)) {
+		return std::string();
+	} else {
+		return std::string(buf);
+	}
 #else
 	char result[PATH_MAX];
 	ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
@@ -20,19 +28,6 @@ bool Helpers::LoadTextureFromSurface(cairo_surface_t* surface, GLuint* out_textu
 	uint32_t* image_data = (uint32_t*)cairo_image_surface_get_data(surface);
 	if(image_data == NULL)
 		return false;
-
-	/*
-	cairo_pattern_t* pattern = cairo_pattern_create_for_surface(surface);
-	cairo_pattern_set_filter(pattern, CAIRO_FILTER_NEAREST);
-	int new_width                = image_width * scale;
-	int new_height               = image_width * scale;
-	cairo_surface_t* new_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, new_width, new_height);
-	cairo_t* cr                  = cairo_create(new_surface);
-	cairo_scale(cr, scale, scale);
-	cairo_set_source(cr, pattern);
-	cairo_paint(cr);
-	cairo_pattern_destroy(pattern);
-	*/
 
 	int image_data_pixels = image_width * image_height;
 	// Need to convert from cairo ARGB to OpenGL RGBA
@@ -51,9 +46,9 @@ bool Helpers::LoadTextureFromSurface(cairo_surface_t* surface, GLuint* out_textu
 	// Setup filtering parameters for display
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,
-		GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+	// This is required on WebGL for non power-of-two textures
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	// Upload pixels into texture
 #if defined(GL_UNPACK_ROW_LENGTH) && !defined(__EMSCRIPTEN__)

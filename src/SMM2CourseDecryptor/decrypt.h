@@ -1,8 +1,11 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 
 #include "aes.h"
 
@@ -18,5 +21,5 @@ namespace LevelDecryptor {
 
 	void gen_key(uint32_t* key_table, uint32_t* out_key, uint32_t* rand_state);
 
-	bool decrypt(const char* input, const char* output);
+	bool decrypt(std::string& input, std::string& output);
 };

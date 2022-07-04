@@ -1,6 +1,6 @@
-#include "Drawers.hpp"
 #include "FontRanges.hpp"
 #include "Helpers.hpp"
+#include "LevelDrawer.hpp"
 #include "LevelParser.hpp"
 
 #define CURL_STATICLIB
@@ -94,29 +94,26 @@ struct LevelWindow {
 	uint64_t window_id;
 	GLuint level_render_image = 0;
 	LevelParser* parser;
-	Drawers* drawer;
+	LevelDrawer* drawer;
 };
 
-struct LevelData {
-	LevelParser* overworld   = nullptr;
-	LevelParser* subworld    = nullptr;
-	Drawers* drawerOverworld = nullptr;
-	Drawers* drawerSubworld  = nullptr;
+struct LevelHandler {
+	LevelParser* overworld       = nullptr;
+	LevelParser* subworld        = nullptr;
+	LevelDrawer* drawerOverworld = nullptr;
+	LevelDrawer* drawerSubworld  = nullptr;
 };
 
 std::vector<LevelWindow> opened_level_windows;
 bool started_level_windows = false;
 
-Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string destination) {
-	Drawers* drawer = new Drawers(*level, 16);
+LevelDrawer* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string destination) {
+	LevelDrawer* drawer = new LevelDrawer(*level, 16);
 
 	drawer->Setup();
 	drawer->SetIsOverworld(isOverworld);
 	drawer->SetLog(log);
 	drawer->SetAssetFolder(assetsFolder);
-
-	if(log)
-		puts("Set zoom");
 
 	cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, drawer->GetWidth(), drawer->GetHeight());
 	cairo_t* cr              = cairo_create(surface);
@@ -125,20 +122,13 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	cairo_set_font_face(cr, font);
 	cairo_font_face_destroy(font);
 
-	if(log)
+	if(log) {
 		fmt::print("Width: {}\nHeight: {}\n", drawer->GetWidth(), drawer->GetHeight());
+	}
 
 	drawer->SetGraphics(cr);
 
-	if(log)
-		puts("Set graphics");
-
-	std::string tilesheet = fmt::format("{}/img/tile/{}-{}{}.png", assetsFolder, level->LH.GameStyle,
-		level->MapHdr.Theme, (level->MapHdr.Flag == 2) ? "A" : "");
-	drawer->SetTilesheet(tilesheet);
-
-	if(log)
-		fmt::print("Set tilesheet to {}\n", tilesheet);
+	drawer->LoadTilesheet();
 
 	if(destination == "instructionsOnly") {
 		// Export as instructions only instead
@@ -162,23 +152,14 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	drawer->DrawItem({ 113 }, false);
 	drawer->DrawItem({ 71 }, false);
 
-	if(log)
-		puts("Draw first bunch");
-
 	//箭头 单向板 中间旗 藤蔓
 
 	drawer->DrawItem({ 66, 67, 106 }, false);
 	drawer->DrawItem({ 64 }, false);
 	drawer->DrawItem({ 90 }, false);
 
-	if(log)
-		puts("Draw second bunch");
-
 	//树 长长吞食花
 	drawer->DrawItem({ 106, 107 }, false);
-
-	if(log)
-		puts("Draw third bunch");
 
 	//地面 传送带 开关 开关砖 P砖 冰锥
 	//斜坡单独
@@ -187,14 +168,8 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	// DrawSlope()
 	drawer->DrawGrdCode();
 
-	if(log)
-		puts("Draw grid");
-
 	drawer->DrawItem({ 53, 94, 99, 100, 79 }, false);
 	drawer->DrawIce();
-
-	if(log)
-		puts("Draw ice");
 
 	//无LINKE
 	//管道 门 蛇 传送箱
@@ -208,9 +183,6 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	//软砖 问号 硬砖 竹轮 云 音符 隐藏 刺 冰块 闪烁砖
 	drawer->DrawItem({ 4, 5, 6, 21, 22, 23, 29, 43, 63, 110, 108 }, false);
 
-	if(log)
-		puts("Draw fourth bunch");
-
 	//跷跷板 熔岩台 升降台
 	drawer->DrawItem({ 91, 36, 11 }, false);
 
@@ -219,9 +191,6 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 
 	//齿轮 甜甜圈
 	drawer->DrawItem({ 68, 82 }, false);
-
-	if(log)
-		puts("Draw fifth bunch");
 
 	//道具
 	drawer->DrawItem({ 0, 1, 2, 3, 8, 10, 12, 13, 15, 18, 19, 20, 25, 28, 30, 31, 32, 33, 34, 35, 39 }, false);
@@ -234,9 +203,6 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	//喷枪 火棍
 	drawer->DrawItem({ 24, 54 }, false);
 
-	if(log)
-		puts("Draw sixth bunch");
-
 	// DrawFireBar(False)
 	// DrawFire(False)
 	//夹子
@@ -248,9 +214,6 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	//卷轴相机
 	// DrawItem("/89/", False)
 
-	if(log)
-		puts("Draw seventh bunch");
-
 	// LINK
 	//软砖 问号 硬砖 竹轮 云 音符 隐藏 刺 冰块
 	drawer->DrawItem({ 4, 5, 6, 21, 22, 23, 29, 43, 63 }, true);
@@ -261,9 +224,6 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	//齿轮 甜甜圈
 	drawer->DrawItem({ 68, 82 }, true);
 
-	if(log)
-		puts("Draw eigth bunch");
-
 	//道具
 	drawer->DrawItem({ 0, 1, 2, 3, 8, 10, 12, 13, 15, 18, 19, 20, 25, 28, 30, 31, 32, 33, 34, 35, 39 }, true);
 	drawer->DrawItem({ 40, 41, 42, 44, 45, 46, 47, 48, 52, 56, 57, 58, 60, 61, 62, 70, 74, 76, 77, 78, 81, 92, 95, 98,
@@ -273,9 +233,6 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 		{ 111, 120, 121, 122, 123, 124, 125, 126, 112, 127, 128, 129, 130, 131, 72, 50, 51, 65, 80, 114, 116 }, true);
 	drawer->DrawItem({ 96, 117, 86 }, true);
 
-	if(log)
-		puts("Draw ninth bunch");
-
 	drawer->DrawCID();
 
 	//喷枪 火棍
@@ -283,22 +240,16 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	drawer->DrawFireBar();
 	drawer->DrawFire();
 
-	if(log)
-		puts("Draw firebars");
-
 	//透明管
 	drawer->DrawCPipe();
-
-	if(log)
-		puts("Draw clear pipe");
 
 	if(!render_objects_over_pipes) {
 		drawer->DrawItem({ 9, 42 }, true);
 	}
 
+	drawer->ClearImageCache();
+
 	if(destination != "instructionsOnly") {
-		if(log)
-			puts("Scaling image");
 		cairo_pattern_t* pattern = cairo_pattern_create_for_surface(surface);
 		cairo_destroy(cr);
 		cairo_surface_destroy(surface);
@@ -310,14 +261,12 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 		cairo_set_source(cr, pattern);
 		cairo_paint(cr);
 		cairo_pattern_destroy(pattern);
-		if(log)
-			puts("Done scaling");
 
-		if(log)
-			puts("Writing image");
+		auto start = std::chrono::high_resolution_clock::now();
 		cairo_surface_write_to_png(surface, destination.c_str());
-		if(log)
-			puts("Done writing");
+		auto stop = std::chrono::high_resolution_clock::now();
+		fmt::print("Cairo PNG writing took {} milliseconds\n",
+			std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
 
 		if(started_level_windows) {
 			LevelWindow newLevelWindow;
@@ -339,17 +288,23 @@ Drawers* DrawMap(LevelParser* level, bool isOverworld, bool log, std::string des
 	return drawer;
 }
 
-LevelData AttemptRender(
+LevelHandler AttemptRender(
 	std::string choice, bool log, std::string destinationOverworld, std::string destinationSubworld) {
 	uintmax_t filesize = std::filesystem::file_size(choice);
-	if(log)
+	std::string content;
+
+	if(log) {
 		fmt::print("Level filesize is {}\n", filesize);
+	}
 
 	if(filesize == 0x5C000) {
-		if(log)
+		if(log) {
 			puts("File is encrypted");
-		LevelParser::DecryptLevelData(choice, fmt::format("{}/temp.bcd", assetsFolder));
-		choice = fmt::format("{}/temp.bcd", assetsFolder);
+		}
+
+		std::ifstream ifs(choice, std::ios::binary);
+		std::string input((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+		LevelParser::DecryptLevelData(input, content);
 	} else {
 		// First, check if compressed
 		FILE* magicFile = fopen(choice.c_str(), "rb");
@@ -362,65 +317,51 @@ LevelData AttemptRender(
 		fclose(magicFile);
 		if(memcmp(zlibMagic, validZlibMagic1, 2) == 0 || memcmp(zlibMagic, validZlibMagic2, 2) == 0
 			|| memcmp(zlibMagic, validZlibMagic3, 2) == 0 || memcmp(zlibMagic, validZlibMagic4, 2) == 0) {
-			if(log)
+			if(log) {
 				puts("File is compressed");
+			}
+
 			// Is compressed, decompress and write to new file
 			std::ifstream readFile(choice, std::ios::in | std::ios::binary);
 			std::vector<uint8_t> data((std::istreambuf_iterator<char>(readFile)), std::istreambuf_iterator<char>());
 			readFile.close();
 
-			std::string decompressed = gzip::decompress((const char*)data.data(), data.size());
-			std::ofstream writeFile(fmt::format("{}/temp.bcd", assetsFolder), std::ios::out | std::ios::binary);
-			writeFile.write(decompressed.data(), decompressed.size());
-			writeFile.close();
-
-			choice = fmt::format("{}/temp.bcd", assetsFolder);
+			content = gzip::decompress((const char*)data.data(), data.size());
 		} else {
 			puts("File is uncompressed or an unknown format");
 		}
 	}
 
-	uintmax_t newFilesize = std::filesystem::file_size(choice);
-
-	if(newFilesize == 0x5BFC0) {
+	if(content.size() == 0x5BFC0) {
 #ifdef _WIN32
 		SetConsoleOutputCP(CP_UTF8);
 #endif
 
-		if(log)
+		if(log) {
 			fmt::print("Assets folder: {}\n", assetsFolder);
+		}
 
-		LevelData data;
+		LevelHandler data;
 
 		if(!destinationOverworld.empty()) {
 			LevelParser* overworldLevelParser = new LevelParser();
-			if(log)
-				puts("Loading overworld level data");
-			overworldLevelParser->LoadLevelData(choice, true);
-			if(log)
-				puts("Done loading overworld level data");
+			overworldLevelParser->LoadLevelData(content, true);
 			auto start           = std::chrono::high_resolution_clock::now();
 			data.drawerOverworld = DrawMap(overworldLevelParser, true, log, destinationOverworld);
 			auto stop            = std::chrono::high_resolution_clock::now();
-			if(log)
-				fmt::print("Rendering overworld took {} milliseconds\n",
-					std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
+			fmt::print("Rendering overworld took {} milliseconds\n",
+				std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
 			data.overworld = overworldLevelParser;
 		}
 
 		if(!destinationSubworld.empty()) {
 			LevelParser* subworldLevelParser = new LevelParser();
-			if(log)
-				puts("Loading subworld level data");
-			subworldLevelParser->LoadLevelData(choice, false);
-			if(log)
-				puts("Done loading subworld level data");
+			subworldLevelParser->LoadLevelData(content, false);
 			auto start          = std::chrono::high_resolution_clock::now();
 			data.drawerSubworld = DrawMap(subworldLevelParser, false, log, destinationSubworld);
 			auto stop           = std::chrono::high_resolution_clock::now();
-			if(log)
-				fmt::print("Rendering subworld took {} milliseconds\n",
-					std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
+			fmt::print("Rendering subworld took {} milliseconds\n",
+				std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count());
 			data.subworld = subworldLevelParser;
 		}
 
@@ -429,7 +370,7 @@ LevelData AttemptRender(
 		puts("File is not a level");
 	}
 
-	return LevelData();
+	return LevelHandler();
 }
 
 #ifdef __EMSCRIPTEN__
@@ -490,64 +431,69 @@ std::string download_level_id;
 std::string download_level_destination;
 
 void level_downloading_routine() {
-	fmt::print("Recieved request for {}\n", download_level_id);
-	std::string request_url = fmt::format("https://tgrcode.com/mm2/level_data/{}", download_level_id);
-	fmt::print("URL is {}\n", request_url);
-#ifdef __EMSCRIPTEN__
-	emscripten_fetch_attr_t attr;
-	emscripten_fetch_attr_init(&attr);
-	strcpy(attr.requestMethod, "GET");
-	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-	attr.onsuccess  = +[](emscripten_fetch_t* fetch) {
-        puts("Request worked");
-        download_level_destination = fmt::format("{}/{}.bcd", assetsFolder, download_level_id);
-        std::filesystem::remove(download_level_destination);
-        auto destination_file = std::fstream(download_level_destination, std::ios::out | std::ios::binary);
-        destination_file.write((char*)&fetch->data[0], fetch->numBytes);
-        destination_file.close();
-        download_level_flag = 1;
-        download_level_id   = "";
-	};
-	attr.onerror = +[](emscripten_fetch_t* fetch) {
-		fmt::print("Request failed, http status code {}\n", fetch->status);
-		download_level_destination = download_level_id;
-		download_level_flag        = 2;
+	if(std::filesystem::exists(fmt::format("{}/{}.bcd", assetsFolder, download_level_id))) {
+		puts("Using cached level data");
+		download_level_destination = fmt::format("{}/{}.bcd", assetsFolder, download_level_id);
+		download_level_flag        = 1;
 		download_level_id          = "";
-	};
-	emscripten_fetch(&attr, request_url.c_str());
-	return;
-#else
-	curl_easy_setopt(curl_handle, CURLOPT_URL, request_url.c_str());
-	curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
-	curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0L);
-	curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
-	auto callback = +[](void* ptr, size_t size, size_t nmemb, void* stream) {
-		std::size_t written = fwrite(ptr, size, nmemb, (FILE*)stream);
-		return written;
-	};
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, callback);
-	download_level_destination = fmt::format("{}/{}.bcd", assetsFolder, download_level_id);
-	fmt::print("Writing to {}\n", download_level_destination);
-	std::filesystem::remove(download_level_destination);
-	FILE* dest = fopen(download_level_destination.c_str(), "wb");
-	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, dest);
-	CURLcode ret = curl_easy_perform(curl_handle);
-	if(ret != CURLE_OK) {
-		fmt::print("CURL error: {}\n", curl_easy_strerror(ret));
-	}
-	fclose(dest);
-	long http_code = 0;
-	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
-	if(http_code == 200) {
-		puts("Request worked");
-		download_level_id   = "";
-		download_level_flag = 1;
 	} else {
-		fmt::print("Request failed, http status code {}\n", http_code);
-		download_level_destination = download_level_id;
-		download_level_flag        = 2;
-	}
+		std::string request_url = fmt::format("https://tgrcode.com/mm2/level_data/{}", download_level_id);
+		fmt::print("Downloading level data from {}\n", request_url);
+#ifdef __EMSCRIPTEN__
+		emscripten_fetch_attr_t attr;
+		emscripten_fetch_attr_init(&attr);
+		strcpy(attr.requestMethod, "GET");
+		attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+		attr.onsuccess  = +[](emscripten_fetch_t* fetch) {
+            puts("Downloading complete");
+            download_level_destination = fmt::format("{}/{}.bcd", assetsFolder, download_level_id);
+            std::filesystem::remove(download_level_destination);
+            auto destination_file = std::fstream(download_level_destination, std::ios::out | std::ios::binary);
+            destination_file.write((char*)&fetch->data[0], fetch->numBytes);
+            destination_file.close();
+            download_level_flag = 1;
+            download_level_id   = "";
+		};
+		attr.onerror = +[](emscripten_fetch_t* fetch) {
+			fmt::print("Request failed, http status code {}\n", fetch->status);
+			download_level_destination = download_level_id;
+			download_level_flag        = 2;
+			download_level_id          = "";
+		};
+		emscripten_fetch(&attr, request_url.c_str());
+		return;
+#else
+		curl_easy_setopt(curl_handle, CURLOPT_URL, request_url.c_str());
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L);
+		curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 0L);
+		curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+		auto callback = +[](void* ptr, size_t size, size_t nmemb, void* stream) {
+			std::size_t written = fwrite(ptr, size, nmemb, (FILE*)stream);
+			return written;
+		};
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, callback);
+		download_level_destination = fmt::format("{}/{}.bcd", assetsFolder, download_level_id);
+		std::filesystem::remove(download_level_destination);
+		FILE* dest = fopen(download_level_destination.c_str(), "wb");
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, dest);
+		CURLcode ret = curl_easy_perform(curl_handle);
+		if(ret != CURLE_OK) {
+			fmt::print("CURL error: {}\n", curl_easy_strerror(ret));
+		}
+		fclose(dest);
+		long http_code = 0;
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &http_code);
+		if(http_code == 200) {
+			puts("Downloading complete");
+			download_level_id   = "";
+			download_level_flag = 1;
+		} else {
+			fmt::print("Request failed, http status code {}\n", http_code);
+			download_level_destination = download_level_id;
+			download_level_flag        = 2;
+		}
 #endif
+	}
 }
 
 void level_downloading_thread() {
@@ -605,15 +551,9 @@ static void main_loop() {
 	int h;
 	SDL_GetWindowSize(window, &w, &h);
 
-	// ImGui::SetNextWindowPos(ImVec2(0, 0));
-	// ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-	// ImGui::Begin("background_image", NULL, ImVec2(0, 0), 0.0f,
-	//	ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar
-	//		| ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBringToFrontOnFocus);
-
 	auto background_draw_list = ImGui::GetBackgroundDrawList();
-	// int frame_offset_x        = frame_counter % background_image_width;
-	// int frame_offset_y        = frame_counter % background_image_height;
+	// int frame_offset_x        = (int)(frame_counter / 5.0) % background_image_width;
+	// int frame_offset_y        = (int)(frame_counter / 5.0) % background_image_height;
 	int frame_offset_x = 0;
 	int frame_offset_y = 0;
 	for(int x = -background_image_width + frame_offset_x; x < w + background_image_width; x += background_image_width) {
@@ -665,20 +605,22 @@ static void main_loop() {
 			fmt::format("{}/{}subworld.png", assetsFolder, std::filesystem::path(choice).stem().string()));
 	}
 
-	static char input_string[12] = { 0 };
+	static char input_string[15] = { 0 };
 	ImGui::Text("레벨 ID로 다운로드");
 	ImGui::InputText("##2", input_string, sizeof(input_string));
 	if(ImGui::Button("레벨 다운로드")) {
 		std::string download_id                 = std::string(input_string);
 		static std::unordered_set<char> charset = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'B', 'C', 'D',
 			'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y' };
-		bool id_valid                           = true;
+		download_id.erase(std::remove(download_id.begin(), download_id.end(), '-'), download_id.end());
+		download_id.erase(std::remove(download_id.begin(), download_id.end(), ' '), download_id.end());
+		bool id_valid = true;
 		if(download_id.size() != 9) {
 			id_valid = false;
 		} else {
 			for(std::size_t i = 0; i < download_id.size(); i++) {
 				download_id[i] = std::toupper(download_id.at(i));
-				if(!charset.contains(download_id.at(i))) {
+				if(!charset.count(download_id.at(i))) {
 					id_valid = false;
 					break;
 				}
@@ -754,10 +696,10 @@ static void main_loop() {
 				selected_level_info.name.c_str(), selected_level_info.name.size());
 #else
 			auto selection = pfd::save_file(
-				"이미지 경로 선택", selected_level_info.name, { "PNG 이미지", ".png" }, pfd::opt::none)
+				"이미지 경로 선택", selected_level_info.name + ".png", { "PNG 이미지", ".png" }, pfd::opt::none)
 								 .result();
 			if(!selection.empty()) {
-				puts("Location chosen");
+				fmt::print("Copying image to {}\n", selection);
 				if(std::filesystem::exists(selection)) {
 					std::filesystem::remove(selection);
 				}
@@ -799,7 +741,7 @@ static void main_loop() {
 #endif
 		}
 
-		close_current_level = ImGui::Button("레벨 닫기");
+		close_current_level = ImGui::Button("창 닫기");
 
 		if(focused_window_index != cached_focused_window_index) {
 			auto& cwfi = cached_focused_window_info;
@@ -807,7 +749,6 @@ static void main_loop() {
 			cwfi.clear();
 			cached_focused_window_index = focused_window_index;
 
-			fmt::print("Caching level data for {}\n", opened_level_windows[focused_window_index].name);
 			LevelParser& level = *opened_level_windows[focused_window_index].parser;
 			cwfi.reserve(50);
 			cwfi.push_back(std::string("이름: ") + level.LH.Name);
@@ -946,7 +887,8 @@ EMSCRIPTEN_KEEPALIVE bool mobile_emscripten_render(char* id) {
 		return false;
 	}
 
-	LevelData data = AttemptRender(path, false, std::string(id) + "-overworld.png", std::string(id) + "-subworld.png");
+	LevelHandler data
+		= AttemptRender(path, false, std::string(id) + "-overworld.png", std::string(id) + "-subworld.png");
 	delete data.overworld;
 	delete data.subworld;
 	delete data.drawerOverworld;
@@ -983,6 +925,11 @@ int main(int argc, char** argv) {
 
 #ifdef __EMSCRIPTEN__
 	assetsFolder = "";
+#elif defined(__linux__) and !defined(IS_DEBUG)
+	assetsFolder = "/usr/share/toost";
+#elif defined(__APPLE__) and !defined(IS_DEBUG)
+	assetsFolder = Helpers::GetExecutableDirectory().parent_path().parent_path().append("share").string();
+	std::replace(assetsFolder.begin(), assetsFolder.end(), '\\', '/');
 #else
 	assetsFolder = Helpers::GetExecutableDirectory().parent_path().parent_path().string();
 	std::replace(assetsFolder.begin(), assetsFolder.end(), '\\', '/');
@@ -1005,9 +952,8 @@ int main(int argc, char** argv) {
 			download_level_id = result["code"].as<std::string>();
 			level_downloading_routine();
 			for(int i = 0; i < 1000; i++) {
-// Give 20 seconds
 #ifndef __EMSCRIPTEN__
-				std::this_thread::sleep_for(std::chrono::milliseconds(20));
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 #endif
 				if(download_level_flag == 2) {
 					fmt::print("레벨 ID {} 다운로드 불가\n", download_level_destination);
@@ -1037,7 +983,7 @@ int main(int argc, char** argv) {
 			}
 
 			if(!overworldImage.empty() || !subworldImage.empty()) {
-				LevelData data = AttemptRender(path, result.count("debug"), overworldImage, subworldImage);
+				LevelHandler data = AttemptRender(path, result.count("debug"), overworldImage, subworldImage);
 				if(data.overworld) {
 					delete data.overworld;
 					delete data.subworld;
@@ -1048,7 +994,7 @@ int main(int argc, char** argv) {
 				}
 			}
 
-			LevelData data;
+			LevelHandler data;
 			if(result.count("overworldJson") || result.count("subworldJson")) {
 				data = AttemptRender(path, result.count("debug"), "instructionsOnly", "instructionsOnly");
 			}
@@ -1117,11 +1063,8 @@ int main(int argc, char** argv) {
 
 	// Decide GL+GLSL versions
 #if defined(__EMSCRIPTEN__)
-	// For the browser using Emscripten, we are going to use WebGL1 with GL ES2. See the Makefile. for requirement
-	// details. It is very likely the generated file won't work in many browsers. Firefox is the only sure bet, but I
-	// have successfully run this code on Chrome for Android for example.
+	// WebGL1 + GL ES2
 	const char* glsl_version = "#version 100";
-	// const char* glsl_version = "#version 300 es";
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
@@ -1156,9 +1099,9 @@ int main(int argc, char** argv) {
 	SDL_DisplayMode current;
 	SDL_GetCurrentDisplayMode(0, &current);
 	SDL_WindowFlags window_flags
-		= (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+		= (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_MAXIMIZED);
 	window     = SDL_CreateWindow("Toost | Super Mario Maker 2 Level Viewer", SDL_WINDOWPOS_CENTERED,
-			SDL_WINDOWPOS_CENTERED, 1366, 768, window_flags);
+        SDL_WINDOWPOS_CENTERED, 640, 360, window_flags);
 	gl_context = SDL_GL_CreateContext(window);
 
 	if(!gl_context) {
@@ -1167,9 +1110,7 @@ int main(int argc, char** argv) {
 	}
 
 	SDL_GL_MakeCurrent(window, gl_context);
-	// SDL_GL_SetSwapInterval(1); // Enable vsync
 
-	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
@@ -1202,14 +1143,12 @@ int main(int argc, char** argv) {
 
 #ifdef __EMSCRIPTEN__
 	EM_ASM({ Module.showLoading = false; });
-#endif
-
-#ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(main_loop, 0, true);
 #else
 	// Main loop
 	while(!done) {
 		main_loop();
+		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
 	// Cleanup
